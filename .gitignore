@@ -1,0 +1,9 @@
+# Kbuild ignored files
+modules.order
+*.cmd
+*.ko
+*.mod
+*.o
+
+# Checker binaries 
+test
