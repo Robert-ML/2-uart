@@ -7,3 +7,6 @@ modules.order
 
 # Checker binaries 
 test
+
+# VS Code folder
+.vscode/*
