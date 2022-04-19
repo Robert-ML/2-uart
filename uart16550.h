@@ -1,6 +1,8 @@
 #ifndef _UART16550_H
 #define _UART16550_H
 
+#define MODULE_NAME			"uart16550"
+
 #define	OPTION_COM1			1
 #define OPTION_COM2			2
 #define OPTION_BOTH			3

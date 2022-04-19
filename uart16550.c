@@ -5,13 +5,19 @@
  * Author: Horia Nedelcu <nedelcu.horia.alexandru@gmail.com>
  * Author: Robert Lica   <robertlica21@gmail.com>
  */
+#include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
-#include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/cdev.h>
 
 #include "./uart16550.h"
+
+
+int major = 42, option = OPTION_BOTH, first_minor, num_minors;
+module_param(major,  int, 0000);
+module_param(option, int, 0000);
 
 
 struct uart16550_dev {
@@ -24,6 +30,7 @@ static struct uart16550_dev devs[MAX_NUMBER_DEVICES];
 static int uart16550_open(struct inode *inode, struct file *file)
 {
 	/*TODO */
+	pr_info("my dick is huge\n");
 	return 0;
 }
 
@@ -66,13 +73,56 @@ static const struct file_operations uart16550_fops = {
 
 static int __init uart16550_init(void)
 {
-	/* TODO: */
+	int i, err;
+
+	switch (option)
+	{
+	case OPTION_COM1:
+		first_minor = 0;
+		num_minors  = 1;
+		
+		break;
+	case OPTION_COM2:
+		first_minor = 1;
+		num_minors  = 1;
+
+		break;
+	case OPTION_BOTH:
+		first_minor = 0;
+		num_minors  = MAX_NUMBER_DEVICES;
+
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	err = register_chrdev_region(MKDEV(major, first_minor), num_minors, MODULE_NAME);
+	if (err != 0) {
+		pr_err("register_chrdev_region failed");
+		return err;
+	}
+
+	for (i = 0; i < num_minors; i++) {
+		/* init and add cdev to kernel core */
+		// TODO: handle errors
+		cdev_init(&devs[i].cdev, &uart16550_fops);
+		cdev_add( &devs[i].cdev, MKDEV(major, i + first_minor), 1);
+	}
+
 	return 0;
 }
 
 static void __exit uart16550_exit(void)
 {
-	/* TODO: */
+	int i;
+
+	for (i = 0; i < num_minors; i++) {
+		/* delete cdev from kernel core */
+		cdev_del(&devs[i].cdev);
+	}
+
+	/* unregister char device region */
+	unregister_chrdev_region(MKDEV(major, first_minor), num_minors);
 }
 
 module_init(uart16550_init);
